@@ -1,4 +1,4 @@
-import  { useState } from 'react';
+import {useState, useEffect, useRef} from 'react';
 import Icon from 'supercons';
 import '../style/Setting.css';
 
@@ -35,8 +35,10 @@ interface SettingProps {
 
 // 定义 Setting 组件
 export default function Setting({ settings, onSettingsChange, onFileSelect } : SettingProps) {
-
+    const  {fontSize, theme}  = settings;
     const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+    const settingsPanelRef = useRef<HTMLDivElement>(null); // 添加 ref 来引用设置面板
+
 
     const toggleSettingsPanel = () => {
         setShowSettingsPanel(!showSettingsPanel);
@@ -50,8 +52,6 @@ export default function Setting({ settings, onSettingsChange, onFileSelect } : S
         });
     };
 
-    const  {fontSize, theme}  = settings;
-
     const handleFileChange =  (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
@@ -62,6 +62,7 @@ export default function Setting({ settings, onSettingsChange, onFileSelect } : S
                 }
             };
             reader.readAsText(file);
+            setShowSettingsPanel(false);
         }
     };
 
@@ -74,13 +75,31 @@ export default function Setting({ settings, onSettingsChange, onFileSelect } : S
         }
     };
 
+    // 点击外部区域关闭设置面板
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Node;
+            if (settingsPanelRef.current && !settingsPanelRef.current.contains(target)) {
+                setShowSettingsPanel(false);
+            }
+        };
+
+        if (showSettingsPanel) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showSettingsPanel]);
+
     return (
         <div>
             <button className="settings-btn" title="Settings" style={{ color: 'rgba(0, 0, 0, 0.1)' }} onClick={toggleSettingsPanel}>
                 <Icon glyph="settings" />
             </button>
 
-            <div className={`settings-panel ${showSettingsPanel ? 'active' : ''}`}>
+            <div ref={settingsPanelRef} className={`settings-panel ${showSettingsPanel ? 'active' : ''}`}>
                 <button className="close-settings-btn" onClick={() => setShowSettingsPanel(false)}><Icon glyph="view-close" /></button>
 
                 <div className="markdown-source">
@@ -90,7 +109,7 @@ export default function Setting({ settings, onSettingsChange, onFileSelect } : S
                     <button id="load-url">加载</button>
                     <p style={{ margin: '10px 0' }}>或者</p>
                     <label htmlFor="markdown-file">从本地文件加载 Markdown:</label>
-                    <input type="file" id="markdown-file" accept=".md, .markdown, .txt" onChange={handleFileChange}/>
+                    <input type="file" id="markdown-file" accept=".md, .markdown, .txt, .mdx" onChange={handleFileChange}/>
                 </div>
 
                 <hr style={{ margin: '15px 0', borderTop: '1px solid #eee' }} />
