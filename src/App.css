@@ -14,7 +14,7 @@ body {
 }
 
 .presentation-container {
-  position: relative; /* 使子元素的绝对定位相对于此容器 */
+  position: relative;
   height: 100vh;
   width: 100vw;
   display: flex;
@@ -23,6 +23,7 @@ body {
   justify-content: center;
 }
 
+/* 幻灯片基础样式 */
 .slide {
   width: 90%;
   height: 90%;
@@ -30,38 +31,38 @@ body {
   background: rgba(255, 255, 255, 0.5);
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  overflow-y: auto; /* 允许垂直滚动 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 和 Edge */
-  /* WebKit scrollbar is handled by .slide::-webkit-scrollbar */
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   display: none;
   font-size: 24px;
   line-height: 1.6;
 }
 
 .slide::-webkit-scrollbar {
-  display: none; /* WebKit 浏览器隐藏滚动条 */
+  display: none;
 }
 
 .slide.active {
   display: block;
 }
 
+/* 幻灯片内容样式 */
 .slide h1 {
-  font-size: 2.5em; /* 60px / 24px */
+  font-size: 2.5em;
   margin-bottom: 30px;
   color: #333;
   text-align: center;
 }
 
 .slide h2 {
-  font-size: 1.5em; /* 36px / 24px */
+  font-size: 1.5em;
   margin-bottom: 24px;
   color: #444;
 }
 
 .slide h3 {
-  font-size: 1.25em; /* 30px / 24px */
+  font-size: 1.25em;
   margin-bottom: 20px;
 }
 
@@ -78,203 +79,7 @@ body {
   margin-bottom: 10px;
 }
 
-/* 段落显示和隐藏的样式 */
-.hidden-segment {
-  opacity: 0;
-  height: 0;
-  overflow: hidden;
-  transition: opacity 0.5s ease, height 0.3s ease;
-  margin: 0;
-  padding: 0;
-  background: transparent !important;
-  visibility: hidden;
-}
-.visible-segment {
-  opacity: 1;
-  height: auto;
-  overflow: visible;
-  transform: translateY(0) scale(1) rotateX(0);
-  filter: blur(0);
-  transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.6s ease-out, height 0.3s ease;
-  margin-bottom: 20px;
-}
-
-/* 代码行样式 */
-.code-line {
-  white-space: pre;
-  font-family: 'Courier New', Courier, monospace;
-}
-
-.controls {
-  position: fixed;
-  bottom: 10px;
-  right: 15px;
-  display: flex;
-  align-items: center;
-  z-index: 100;
-}
-
-.control-btn {
-  background: transparent;
-  border: none;
-  width: 50px;
-  height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: rgba(0, 0, 0, 0.02);
-  margin: 0;
-  position: relative;
-}
-
-.control-btn:hover {
-  background: transparent;
-  color: rgba(0, 0, 0, 0.1);
-}
-
-.prev-btn {
-  padding-right: 0;
-  position: fixed;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 100%;
-  width: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.next-btn {
-  padding-left: 0;
-  position: fixed;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 100%;
-  width: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.prev-btn:hover, .next-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-
-.theme-options {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin: 15px 0;
-}
-
-.theme-option {
-  height: 30px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.theme-option:hover {
-  transform: scale(1.05);
-}
-
-.theme-option.active {
-  border: 2px solid #000;
-}
-
-.markdown-source {
-  margin-top: 20px;
-}
-
-.markdown-source h3 {
-  font-size: 16px;
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-
-.markdown-source input {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1em;
-}
-
-.markdown-source button {
-  display: inline-block;
-  background: #4a89dc;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-  font-size: 1em;
-  margin-right: 10px;
-}
-
-.markdown-source button:hover {
-  background: #3d73b9;
-}
-
-.page-indicator {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 5px 10px;
-  font-size: 16px;
-  color: rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: right;
-  background: transparent;
-  width: 100%;
-  z-index: 100;
-}
-
-/* 添加进度指示器样式 */
-.progress-indicator {
-  position: absolute; /* 相对于 presentation-container 定位 */
-  bottom: 5.7%; /* 位于页码指示器上方 */
-  right: 5%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 12px;
-  color: rgba(0, 0, 0, 0.1);
-  font-size: 14px;
-  z-index: 100; /* 确保它位于其他内容之上 */
-}
-
-.progress-bar-container {
-  width: 60px;
-  height: 4px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  width: 0;
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  min-width: 30px;
-  text-align: center;
-}
-
-/* Add some more styles for better Markdown rendering */
+/* Markdown渲染增强样式 */
 .slide img {
   max-width: 100%;
   height: auto;
@@ -311,7 +116,168 @@ body {
   border-top: 1px solid #ddd;
 }
 
-/* For loading indicator */
+/* 控制按钮样式 */
+.control-btn {
+  background: transparent;
+  border: none;
+  width: 50px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: rgba(0, 0, 0, 0.02);
+  margin: 0;
+  position: relative;
+}
+
+.control-btn:hover {
+  background: transparent;
+  color: rgba(0, 0, 0, 0.1);
+}
+
+.prev-btn {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 100%;
+  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.next-btn {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 100%;
+  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prev-btn:hover, .next-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 主题选项样式 */
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.theme-option {
+  height: 30px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.theme-option:hover {
+  transform: scale(1.05);
+}
+
+.theme-option.active {
+  border: 2px solid #000;
+}
+
+/* Markdown源样式 */
+.markdown-source {
+  margin-top: 20px;
+}
+
+.markdown-source h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.markdown-source input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1em;
+}
+
+.markdown-source button {
+  display: inline-block;
+  background: #4a89dc;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-size: 1em;
+  margin-right: 10px;
+}
+
+.markdown-source button:hover {
+  background: #3d73b9;
+}
+
+/* 页面指示器样式 */
+.page-indicator {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 5px 10px;
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: right;
+  background: transparent;
+  width: 100%;
+  z-index: 100;
+}
+
+/* 进度指示器样式 */
+.progress-indicator {
+  position: absolute;
+  bottom: 5.7%;
+  right: 5%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  color: rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  z-index: 100;
+}
+
+.progress-bar-container {
+  width: 60px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  width: 0;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  min-width: 30px;
+  text-align: center;
+}
+
+/* 加载指示器样式 */
 .loader {
   position: fixed;
   top: 0;
@@ -427,7 +393,7 @@ body {
   border-color: #4a89dc;
 }
 
-/* New styles for article list drawer */
+/* 文章按钮样式 */
 .articles-btn {
   position: fixed;
   top: 15px;
@@ -459,70 +425,4 @@ body {
 
 .articles-btn:hover i {
   transform: rotate(90deg);
-}
-
-.articles-panel {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 300px;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
-  z-index: 1001;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease-in-out;
-  padding: 20px;
-  box-sizing: border-box;
-  overflow-y: auto;
-  display: block;
-}
-
-.articles-panel.active {
-  transform: translateX(0) !important;
-}
-
-.articles-panel h3 {
-  font-size: 1.2em;
-  margin-bottom: 15px;
-  color: #333;
-}
-
-.article-list ul {
-  list-style: none;
-  padding: 0;
-}
-
-.article-list li {
-  margin-bottom: 10px;
-}
-
-.article-list a {
-  display: block;
-  padding: 8px 12px;
-  background: #f0f0f0;
-  border-radius: 5px;
-  text-decoration: none;
-  color: #333;
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.article-list a:hover {
-  background: #e0e0e0;
-  transform: translateX(5px);
-}
-
-.close-articles-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 1.5em;
-  cursor: pointer;
-  color: #333;
-}
-
-.close-articles-btn:hover {
-  color: #f00;
 }
