@@ -19,6 +19,90 @@ const themeGradients = [
     'linear-gradient(135deg, #226EE0, #75FF9E)'
 ];
 
+const highlightJsStyles = [
+    '1c-light',
+    'a11y-dark',
+    'a11y-light',
+    'agate',
+    'an-old-hope',
+    'androidstudio',
+    'arduino-light',
+    'arta',
+    'ascetic',
+    'atom-one-dark-reasonable',
+    'atom-one-dark',
+    'atom-one-light',
+    'brown-paper',
+    'codepen-embed',
+    'color-brewer',
+    'cybertopia-cherry',
+    'cybertopia-dimmer',
+    'cybertopia-icecap',
+    'cybertopia-saturated',
+    'dark',
+    'default',
+    'devibeans',
+    'docco',
+    'far',
+    'felipec',
+    'foundation',
+    'github-dark-dimmed',
+    'github-dark',
+    'github',
+    'gml',
+    'googlecode',
+    'gradient-dark',
+    'gradient-light',
+    'grayscale',
+    'hybrid',
+    'idea',
+    'intellij-light',
+    'ir-black',
+    'isbl-editor-dark',
+    'isbl-editor-light',
+    'kimbie-dark',
+    'kimbie-light',
+    'lightfair',
+    'lioshi',
+    'magula',
+    'mono-blue',
+    'monokai-sublime',
+    'monokai',
+    'night-owl',
+    'nnfx-dark',
+    'nnfx-light',
+    'nord',
+    'obsidian',
+    'panda-syntax-dark',
+    'panda-syntax-light',
+    'paraiso-dark',
+    'paraiso-light',
+    'pojoaque',
+    'purebasic',
+    'qtcreator-dark',
+    'qtcreator-light',
+    'rainbow',
+    'rose-pine-dawn',
+    'rose-pine-moon',
+    'rose-pine',
+    'routeros',
+    'school-book',
+    'shades-of-purple',
+    'srcery',
+    'stackoverflow-dark',
+    'stackoverflow-light',
+    'sunburst',
+    'tokyo-night-dark',
+    'tokyo-night-light',
+    'tomorrow-night-blue',
+    'tomorrow-night-bright',
+    'vs',
+    'vs2015',
+    'xcode',
+    'xt256'
+];
+
+
 // 定义 settings 的类型结构
 interface Settings {
     theme: string;
@@ -155,15 +239,18 @@ export default function Setting({ settings, onSettingsChange, onFileSelect } : S
                 </div>
                 <hr style={{ margin: '15px 0', borderTop: '1px solid #eee' }} />
 
-                {/* 新增: 代码块主题 */}
-                {/*<div className="code-theme-settings">*/}
-                {/*    <h3>代码块主题</h3>*/}
-                {/*    <select value={currentCodeTheme} onChange={(e) => onThemeChange(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '5px', border: '1px solid #ddd'}}>*/}
-                {/*        {themeNames.map(name => (*/}
-                {/*            <option key={name} value={name}>{name}</option>*/}
-                {/*        ))}*/}
-                {/*    </select>*/}
-                {/*</div>*/}
+                <div className="code-theme-settings">
+                    <h3>代码块主题</h3>
+                    <select
+                        value={settings.codeTheme}
+                        onChange={(e) => updateSetting('codeTheme', e.target.value)}
+                        style={{ width: '100%', padding: '8px', borderRadius: '5px', border: '1px solid #ddd' }}>
+                        {highlightJsStyles.map(name => (
+                            <option key={name} value={name}>{name}</option>
+                        ))}
+                    </select>
+                </div>
+
             </div>
         </div>
     );

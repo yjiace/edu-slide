@@ -78,56 +78,6 @@ body {
   margin-bottom: 10px;
 }
 
-.slide pre {
-  background: #f6f8fa;
-  border-radius: 5px;
-  padding: 15px;
-  margin-bottom: 20px;
-  font-size: 0.83em; /* 20px / 24px */
-  white-space: pre-wrap;
-}
-
-/* 确保隐藏的代码块容器也不显示背景 */
-.slide pre.code-container {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  margin: 0;
-}
-
-/* 只有当代码行可见时才显示背景和样式 */
-.slide pre.code-container .visible-segment {
-  background: #f6f8fa;
-  border-radius: 5px;
-  padding: 15px;
-  margin-bottom: 20px;
-  white-space: pre-wrap;
-}
-
-/* 当代码块中至少有一个可见元素时，恢复代码块容器样式 */
-/* 使用JavaScript动态添加类，以确保浏览器兼容性 */
-.slide pre.code-container.has-visible-content {
-  background: #f6f8fa;
-  border-radius: 5px;
-  padding: 15px;
-  margin-bottom: 20px;
-}
-
-.slide code {
-  font-family: 'Courier New', Courier, monospace;
-  border-radius: 3px;
-  padding: 3px 5px;
-  font-size: 0.92em; /* 22px / 24px, relative to slide font-size */
-  color: #d63384; /* 使用醒目的颜色 */
-  background: rgb(248, 248, 248, 0.2)
-}
-
-.slide pre code {
-  padding: 0;
-  background: transparent;
-}
-
 /* 段落显示和隐藏的样式 */
 .hidden-segment {
   opacity: 0;
