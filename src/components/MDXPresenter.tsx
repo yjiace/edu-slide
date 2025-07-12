@@ -27,6 +27,26 @@ interface Slide {
     title?: string;
 }
 
+// 自定义rehype插件，为所有链接添加target="_blank"和rel="noopener noreferrer"
+const rehypeExternalLinks = () => {
+    return (tree: any) => {
+        const visit = (node: any) => {
+            if (node.type === 'element' && node.tagName === 'a') {
+                // 为所有链接添加target="_blank"和rel="noopener noreferrer"
+                node.properties = node.properties || {};
+                node.properties.target = '_blank';
+                node.properties.rel = 'noopener noreferrer';
+            }
+            
+            if (node.children) {
+                node.children.forEach(visit);
+            }
+        };
+        
+        visit(tree);
+    };
+};
+
 const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings }) => {
     const { fontSize, codeTheme } = settings;
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -93,6 +113,7 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings }) => {
             .use(remarkRehype, { allowDangerousHtml: true })
             .use(rehypeRaw)
             .use(rehypeHighlight, { detect: true })
+            .use(rehypeExternalLinks)
             .use(rehypeStringify);
     }, []);
 
