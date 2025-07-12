@@ -36,7 +36,7 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings }) => {
         if (!content.trim()) return [];
 
         // 首先处理水平分割线，但要避免表格中的分割线
-        const sections = content.split(/\n---\n(?!\s*\|)/);
+        const sections = content.split(/\n\s*---\s*\n/);
 
         const allSlides: Slide[] = [];
 
