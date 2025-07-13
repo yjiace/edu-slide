@@ -1,5 +1,5 @@
-import React, { useMemo, useEffect, useState, useCallback } from 'react';
-import { unified } from 'unified';
+import React, {useMemo, useEffect, useState, useCallback, useRef} from 'react';
+import {unified} from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkRehype from 'remark-rehype';
@@ -32,7 +32,7 @@ interface Slide {
 // 定义内容片段类型
 interface ContentSegment {
     id: string;
-    type: 'text' | 'code' | 'list' | 'heading' | 'image' | 'table';
+    type: 'text' | 'code' | 'list' | 'heading' | 'image' | 'table' | 'listItem';
     content: string;
     isVisible: boolean;
     animationDelay?: number;
@@ -57,10 +57,12 @@ const rehypeExternalLinks = () => {
     };
 };
 
-const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSchedule }) => {
-    const { fontSize, codeTheme } = settings;
+const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedule}) => {
+    const {fontSize, codeTheme} = settings;
     const [currentSlide, setCurrentSlide] = useState(0);
     const [slideSegments, setSlideSegments] = useState<{ [slideId: string]: ContentSegment[] }>({});
+    const lastWheelTime = useRef(0);
+    const wheelDeltaAccumulator = useRef(0);
 
     // 解析内容为片段
     const parseContentToSegments = (content: string): ContentSegment[] => {
@@ -109,7 +111,7 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
             if (line.match(/^#{1,6}\s+/)) {
                 type = 'heading';
             } else if (line.match(/^[-*+]\s+/) || line.match(/^\d+\.\s+/)) {
-                type = 'list';
+                type = 'listItem'; // 改为 listItem，每个列表项单独处理
             } else if (line.match(/^\|.*\|$/)) {
                 type = 'table';
             } else if (line.match(/^!\[.*\]\(.*\)$/)) {
@@ -121,10 +123,21 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
                 let tableContent = line + '\n';
                 let j = i + 1;
 
-                // 继续读取表格行
-                while (j < lines.length && (lines[j].match(/^\|.*\|$/) || lines[j].match(/^[-|:\s]*$/))) {
-                    tableContent += lines[j] + '\n';
-                    j++;
+                // 继续读取表格行，跳过分隔符行
+                while (j < lines.length) {
+                    const nextLine = lines[j];
+                    if (nextLine.match(/^\|.*\|$/)) {
+                        // 跳过表格分隔符行（如 |---|---|）
+                        if (!nextLine.match(/^[-|:\s]*$/)) {
+                            tableContent += nextLine + '\n';
+                        }
+                        j++;
+                    } else if (nextLine.match(/^[-|:\s]*$/)) {
+                        // 跳过分隔符行
+                        j++;
+                    } else {
+                        break;
+                    }
                 }
 
                 segments.push({
@@ -138,21 +151,21 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
                 continue;
             }
 
-            // 处理列表项（连续的列表项合并）
-            if (type === 'list') {
-                let listContent = line + '\n';
+            // 处理列表项（每个列表项单独作为一个片段）
+            if (type === 'listItem') {
+                let listItemContent = line;
                 let j = i + 1;
 
-                // 继续读取列表项
-                while (j < lines.length && (lines[j].match(/^[-*+]\s+/) || lines[j].match(/^\d+\.\s+/) || lines[j].match(/^\s{2,}/))) {
-                    listContent += lines[j] + '\n';
+                // 检查是否有缩进的子内容
+                while (j < lines.length && lines[j].match(/^\s{2,}/)) {
+                    listItemContent += '\n' + lines[j];
                     j++;
                 }
 
                 segments.push({
                     id: `segment-${segmentId++}`,
-                    type: 'list',
-                    content: listContent.trim(),
+                    type: 'listItem',
+                    content: listItemContent,
                     isVisible: false
                 });
 
@@ -234,9 +247,9 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
         return unified()
             .use(remarkParse)
             .use(remarkGfm)
-            .use(remarkRehype, { allowDangerousHtml: true })
+            .use(remarkRehype, {allowDangerousHtml: true})
             .use(rehypeRaw)
-            .use(rehypeHighlight, { detect: true })
+            .use(rehypeHighlight, {detect: true})
             .use(rehypeExternalLinks)
             .use(rehypeStringify);
     }, []);
@@ -301,7 +314,20 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
     useEffect(() => {
         const handleClick = (e: MouseEvent) => {
             // 只处理左键点击
-            if (e.button === 0) {
+            if (e.button !== 0) return;
+
+            // 检查点击是否在演示区域内
+            const presentationContainer = document.getElementById('presentation');
+            if (!presentationContainer) return;
+
+            const rect = presentationContainer.getBoundingClientRect();
+            const isInPresentation =
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom;
+
+            if (isInPresentation) {
                 showNextSegment();
             }
         };
@@ -309,6 +335,63 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
     }, [showNextSegment]);
+
+    // 滚轮事件处理
+    useEffect(() => {
+        const WHEEL_THRESHOLD = 150; // 降低滚轮阈值
+        const WHEEL_TIMEOUT = 500; // 增加超时时间
+
+        const handleWheel = (e: WheelEvent) => {
+            const presentationContainer = document.getElementById('presentation');
+            if (!presentationContainer) return;
+
+            // 检查是否在演示区域内
+            const rect = presentationContainer.getBoundingClientRect();
+            const isInPresentation =
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom;
+
+            if (!isInPresentation) return;
+
+            const currentSlideId = slides[currentSlide]?.id;
+            if (!currentSlideId) return;
+
+            const currentSegments = slideSegments[currentSlideId] || [];
+            const hasHiddenSegments = currentSegments.some(s => !s.isVisible);
+
+            // 只有当前幻灯片有未显示的内容时才处理滚轮事件
+            if (hasHiddenSegments && e.deltaY > 0) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const currentTime = Date.now();
+
+                // 如果超过超时时间，重置累积值
+                if (currentTime - lastWheelTime.current > WHEEL_TIMEOUT) {
+                    wheelDeltaAccumulator.current = 0;
+                }
+
+                lastWheelTime.current = currentTime;
+
+                // 累积滚轮值
+                wheelDeltaAccumulator.current += Math.abs(e.deltaY);
+
+                // 如果累积值超过阈值，触发显示下一个片段
+                if (wheelDeltaAccumulator.current >= WHEEL_THRESHOLD) {
+                    showNextSegment();
+                    wheelDeltaAccumulator.current = 0; // 重置累积值
+                }
+            }
+        };
+
+        // 使用 { passive: false } 来确保可以调用 preventDefault()
+        document.addEventListener('wheel', handleWheel, {passive: false});
+        return () => {
+            document.removeEventListener('wheel', handleWheel);
+        };
+    }, [currentSlide, slides, slideSegments, showNextSegment]);
 
     // 键盘事件处理
     useEffect(() => {
@@ -359,10 +442,10 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
     const renderSegmentContent = (segment: ContentSegment) => {
         try {
             const result = processMarkdown.processSync(segment.content);
-            return { __html: String(result) };
+            return {__html: String(result)};
         } catch (error) {
             console.error('Markdown processing error:', error);
-            return { __html: `<pre>${segment.content}</pre>` };
+            return {__html: `<pre>${segment.content}</pre>`};
         }
     };
 
@@ -492,8 +575,8 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
                 animation: codeBlockAppear 1s cubic-bezier(0.4, 0, 0.2, 1);
             }
             
-            .segment-list.visible {
-                animation: listItemsAppear 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            .segment-listItem.visible {
+                animation: listItemAppear 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             }
             
             .segment-image.visible {
@@ -567,7 +650,7 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
                 }
             }
             
-            @keyframes listItemsAppear {
+            @keyframes listItemAppear {
                 from {
                     opacity: 0;
                     transform: translateX(-20px);
@@ -610,44 +693,6 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
                     transform: translateY(0);
                 }
             }
-            
-            /* 列表动画增强 */
-            .segment-list ul li,
-            .segment-list ol li {
-                opacity: 0;
-                animation: listItemFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            }
-            
-            .segment-list.visible ul li:nth-child(1),
-            .segment-list.visible ol li:nth-child(1) {
-                animation-delay: 0.1s;
-            }
-            
-            .segment-list.visible ul li:nth-child(2),
-            .segment-list.visible ol li:nth-child(2) {
-                animation-delay: 0.2s;
-            }
-            
-            .segment-list.visible ul li:nth-child(3),
-            .segment-list.visible ol li:nth-child(3) {
-                animation-delay: 0.3s;
-            }
-            
-            .segment-list.visible ul li:nth-child(n+4),
-            .segment-list.visible ol li:nth-child(n+4) {
-                animation-delay: 0.4s;
-            }
-            
-            @keyframes listItemFadeIn {
-                from {
-                    opacity: 0;
-                    transform: translateX(-10px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-            }
         `;
         document.head.appendChild(style);
 
@@ -662,7 +707,7 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
     if (!slides.length) {
         return (
             <div className="presentation-container" id="presentation">
-                <div className="slide active" style={{ fontSize: `${fontSize}px` }}>
+                <div className="slide active" style={{fontSize: `${fontSize}px`}}>
                     <div className="segmented-content">
                         <h1 className="visible-segment">
                             请加载一个 MDX 文档
@@ -682,7 +727,7 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSched
                 <div
                     key={slide.id}
                     className={`slide ${index === currentSlide ? 'active' : ''}`}
-                    style={{ fontSize: `${fontSize}px` }}
+                    style={{fontSize: `${fontSize}px`}}
                     data-slide-id={slide.id}
                 >
                     <div className="segmented-content">
