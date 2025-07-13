@@ -17,6 +17,7 @@ function App() {
         return cachedSettings ? JSON.parse(cachedSettings) : defaultSettings;
     });
     const [mdx, setMdx] = useState('');
+    const [schedule, setSchedule] = useState(100);
 
     // 在设置修改时更新 localStorage 中的缓存数据
     useEffect(() => {
@@ -36,6 +37,7 @@ function App() {
             <MDXPresenter
                 content={mdx}
                 settings={settings}
+                setSchedule={setSchedule}
             />
             <button className="articles-btn" title="Articles" style={{ color: 'rgba(0, 0, 0, 0.1)' }}>
                 <Icon glyph="menu" />
@@ -66,7 +68,7 @@ function App() {
             </button>
 
             <div className="progress-indicator">
-                <span className="progress-text">100%</span>
+                <span className="progress-text">{schedule}%</span>
             </div>
 
             <div className="loader" style={{display: 'none'}}>

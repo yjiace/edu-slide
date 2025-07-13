@@ -18,6 +18,7 @@ interface MDXSettings {
 interface MDXPresenterProps {
     content: string;
     settings: MDXSettings;
+    setSchedule: (schedule: number) => void;
 }
 
 // 定义幻灯片类型
@@ -37,17 +38,17 @@ const rehypeExternalLinks = () => {
                 node.properties.target = '_blank';
                 node.properties.rel = 'noopener noreferrer';
             }
-            
+
             if (node.children) {
                 node.children.forEach(visit);
             }
         };
-        
+
         visit(tree);
     };
 };
 
-const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings }) => {
+const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings, setSchedule }) => {
     const { fontSize, codeTheme } = settings;
     const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -116,6 +117,8 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({ content, settings }) => {
             .use(rehypeExternalLinks)
             .use(rehypeStringify);
     }, []);
+
+    console.log(setSchedule)
 
     // 渲染幻灯片内容
     const renderSlideContent = (slide: Slide) => {
