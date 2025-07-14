@@ -18,6 +18,7 @@ function App() {
     });
     const [mdx, setMdx] = useState('');
     const [schedule, setSchedule] = useState(100);
+    const [showIframe, setShowIframe] = useState(false);
 
     // 在设置修改时更新 localStorage 中的缓存数据
     useEffect(() => {
@@ -70,6 +71,22 @@ function App() {
             <div className="progress-indicator">
                 <span className="progress-text">{schedule}%</span>
             </div>
+
+            <div className="clipboard-btn" onClick={() => setShowIframe(true)}>
+                <Icon glyph="clipboard" />
+            </div>
+
+
+            {showIframe && (
+                <div className="fullscreen-modal">
+                    <button className="fullscreen-close-btn" onClick={() => setShowIframe(false)}>×</button>
+                    <iframe
+                        src="https://b.smallyoung.cn"
+                        title="白板"
+                        allowFullScreen
+                    />
+                </div>
+            )}
 
             <div className="loader" style={{display: 'none'}}>
                 <div className="spinner"></div>

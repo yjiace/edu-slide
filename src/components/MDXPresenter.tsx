@@ -310,31 +310,31 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
         });
     }, [currentSlide, slides]);
 
-    // 鼠标点击事件处理
-    useEffect(() => {
-        const handleClick = (e: MouseEvent) => {
-            // 只处理左键点击
-            if (e.button !== 0) return;
-
-            // 检查点击是否在演示区域内
-            const presentationContainer = document.getElementById('presentation');
-            if (!presentationContainer) return;
-
-            const rect = presentationContainer.getBoundingClientRect();
-            const isInPresentation =
-                e.clientX >= rect.left &&
-                e.clientX <= rect.right &&
-                e.clientY >= rect.top &&
-                e.clientY <= rect.bottom;
-
-            if (isInPresentation) {
-                showNextSegment();
-            }
-        };
-
-        document.addEventListener('mousedown', handleClick);
-        return () => document.removeEventListener('mousedown', handleClick);
-    }, [showNextSegment]);
+    // // 鼠标点击事件处理
+    // useEffect(() => {
+    //     const handleClick = (e: MouseEvent) => {
+    //         // 只处理左键点击
+    //         if (e.button !== 0) return;
+    //
+    //         // 检查点击是否在演示区域内
+    //         const presentationContainer = document.getElementById('presentation');
+    //         if (!presentationContainer) return;
+    //
+    //         const rect = presentationContainer.getBoundingClientRect();
+    //         const isInPresentation =
+    //             e.clientX >= rect.left &&
+    //             e.clientX <= rect.right &&
+    //             e.clientY >= rect.top &&
+    //             e.clientY <= rect.bottom;
+    //
+    //         if (isInPresentation) {
+    //             showNextSegment();
+    //         }
+    //     };
+    //
+    //     document.addEventListener('mousedown', handleClick);
+    //     return () => document.removeEventListener('mousedown', handleClick);
+    // }, [showNextSegment]);
 
     // 滚轮事件处理
     useEffect(() => {
