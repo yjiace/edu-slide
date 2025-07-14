@@ -73,7 +73,7 @@ function App() {
             </div>
 
             <div className="clipboard-btn" onClick={() => setShowIframe(true)}>
-                <Icon glyph="clipboard" />
+                <Icon size={24} glyph="clipboard" />
             </div>
 
 
