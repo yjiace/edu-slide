@@ -106,34 +106,26 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
                 continue;
             }
 
-            // 确定片段类型
-            let type: ContentSegment['type'] = 'text';
-            if (line.match(/^#{1,6}\s+/)) {
-                type = 'heading';
-            } else if (line.match(/^[-*+]\s+/) || line.match(/^\d+\.\s+/)) {
-                type = 'listItem'; // 改为 listItem，每个列表项单独处理
-            } else if (line.match(/^\|.*\|$/)) {
-                type = 'table';
-            } else if (line.match(/^!\[.*\]\(.*\)$/)) {
-                type = 'image';
-            }
-
-            // 处理表格（多行）
-            if (type === 'table') {
-                let tableContent = line + '\n';
+            // ========================= 修改开始 =========================
+            // 将表格作为一个整体处理，而不是逐行处理。
+            // GFM 表格的特征：
+            // 1. 至少有两行。
+            // 2. 第一行是表头，包含管道符 `|`。
+            // 3. 第二行是分隔符，包含管道符 `|` 和短横线 `-`。
+            if (
+                line.includes('|') &&                                       // 当前行是潜在的表头
+                i + 1 < lines.length &&                                     // 后面还有行
+                lines[i + 1].includes('|') && lines[i + 1].includes('-') && // 下一行是分隔符
+                lines[i+1].trim().replace(/[-|: \t]/g, '').length === 0      // 确保分隔符行只包含有效字符
+            ) {
+                let tableContent = [line];
                 let j = i + 1;
 
-                // 继续读取表格行，跳过分隔符行
-                while (j < lines.length) {
-                    const nextLine = lines[j];
-                    if (nextLine.match(/^\|.*\|$/)) {
-                        // 跳过表格分隔符行（如 |---|---|）
-                        if (!nextLine.match(/^[-|:\s]*$/)) {
-                            tableContent += nextLine + '\n';
-                        }
-                        j++;
-                    } else if (nextLine.match(/^[-|:\s]*$/)) {
-                        // 跳过分隔符行
+                // 继续读取，直到遇到空行或不再是表格行的行
+                while (j < lines.length && lines[j].trim() !== '') {
+                    // 表格的行（包括分隔符和数据行）通常都包含管道符
+                    if (lines[j].includes('|')) {
+                        tableContent.push(lines[j]);
                         j++;
                     } else {
                         break;
@@ -143,15 +135,28 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
                 segments.push({
                     id: `segment-${segmentId++}`,
                     type: 'table',
-                    content: tableContent.trim(),
+                    content: tableContent.join('\n'), // 将整个表格块作为内容
                     isVisible: false
                 });
 
-                i = j - 1; // 跳过已处理的行
+                i = j - 1; // 更新外层循环的索引，跳过已处理的行
                 continue;
             }
+            // ========================= 修改结束 =========================
 
-            // 处理列表项（每个列表项单独作为一个片段）
+
+            // 确定片段类型 (旧的表格判断逻辑已被新的块级逻辑取代)
+            let type: ContentSegment['type'] = 'text';
+            if (line.match(/^#{1,6}\s+/)) {
+                type = 'heading';
+            } else if (line.match(/^[-*+]\s+/) || line.match(/^\d+\.\s+/)) {
+                type = 'listItem'; // 每个列表项单独处理
+            } else if (line.match(/^!\[.*\]\(.*\)$/)) {
+                type = 'image';
+            }
+            // 注意：这里不再需要 `else if (line.match(/^\|.*\|$/))` 来判断表格行
+
+            // 处理列表项（每个列表项单独作为一个片段） (逻辑保持不变)
             if (type === 'listItem') {
                 let listItemContent = line;
                 let j = i + 1;
