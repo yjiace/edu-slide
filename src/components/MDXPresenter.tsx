@@ -63,6 +63,8 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
     const [slideSegments, setSlideSegments] = useState<{ [slideId: string]: ContentSegment[] }>({});
     const lastWheelTime = useRef(0);
     const wheelDeltaAccumulator = useRef(0);
+    // 新增一个 ref 来记录上一次成功触发显示的时间，用于实现冷却机制
+    const lastTriggerTime = useRef(0);
 
     // 解析内容为片段
     const parseContentToSegments = (content: string): ContentSegment[] => {
@@ -142,10 +144,8 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
                 i = j - 1; // 更新外层循环的索引，跳过已处理的行
                 continue;
             }
-            // ========================= 修改结束 =========================
 
-
-            // 确定片段类型 (旧的表格判断逻辑已被新的块级逻辑取代)
+            // 确定片段类型
             let type: ContentSegment['type'] = 'text';
             if (line.match(/^#{1,6}\s+/)) {
                 type = 'heading';
@@ -154,9 +154,8 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
             } else if (line.match(/^!\[.*\]\(.*\)$/)) {
                 type = 'image';
             }
-            // 注意：这里不再需要 `else if (line.match(/^\|.*\|$/))` 来判断表格行
 
-            // 处理列表项（每个列表项单独作为一个片段） (逻辑保持不变)
+            // 处理列表项（每个列表项单独作为一个片段）
             if (type === 'listItem') {
                 let listItemContent = line;
                 let j = i + 1;
@@ -315,36 +314,15 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
         });
     }, [currentSlide, slides]);
 
-    // // 鼠标点击事件处理
-    // useEffect(() => {
-    //     const handleClick = (e: MouseEvent) => {
-    //         // 只处理左键点击
-    //         if (e.button !== 0) return;
-    //
-    //         // 检查点击是否在演示区域内
-    //         const presentationContainer = document.getElementById('presentation');
-    //         if (!presentationContainer) return;
-    //
-    //         const rect = presentationContainer.getBoundingClientRect();
-    //         const isInPresentation =
-    //             e.clientX >= rect.left &&
-    //             e.clientX <= rect.right &&
-    //             e.clientY >= rect.top &&
-    //             e.clientY <= rect.bottom;
-    //
-    //         if (isInPresentation) {
-    //             showNextSegment();
-    //         }
-    //     };
-    //
-    //     document.addEventListener('mousedown', handleClick);
-    //     return () => document.removeEventListener('mousedown', handleClick);
-    // }, [showNextSegment]);
-
     // 滚轮事件处理
     useEffect(() => {
-        const WHEEL_THRESHOLD = 150; // 降低滚轮阈值
-        const WHEEL_TIMEOUT = 500; // 增加超时时间
+        // ========================= 修改开始: 优化滚轮灵敏度 =========================
+        // 增加滚轮阈值以降低灵敏度，需要更大幅度的滚动才能触发
+        const WHEEL_THRESHOLD = 200;
+        // 增加滚轮事件的超时时间，以便更好地将慢速滚动聚合为一次操作
+        const WHEEL_TIMEOUT = 1000;
+        // 设置一个触发冷却时间，防止单次快速滚动（如触控板滑动）连续触发多次
+        const TRIGGER_COOLDOWN = 300; // 单位：毫秒
 
         const handleWheel = (e: WheelEvent) => {
             const presentationContainer = document.getElementById('presentation');
@@ -366,27 +344,33 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
             const currentSegments = slideSegments[currentSlideId] || [];
             const hasHiddenSegments = currentSegments.some(s => !s.isVisible);
 
-            // 只有当前幻灯片有未显示的内容时才处理滚轮事件
+            // 只有当前幻灯片有未显示的内容时才处理向下的滚轮事件
             if (hasHiddenSegments && e.deltaY > 0) {
                 e.preventDefault();
                 e.stopPropagation();
 
                 const currentTime = Date.now();
 
-                // 如果超过超时时间，重置累积值
+                // 如果距离上次成功触发的时间太近，则忽略本次滚动，实现冷却效果
+                if (currentTime - lastTriggerTime.current < TRIGGER_COOLDOWN) {
+                    return;
+                }
+                // 如果两次滚动间隔超过了 TIMEOUT，则重置滚动量累加器
                 if (currentTime - lastWheelTime.current > WHEEL_TIMEOUT) {
                     wheelDeltaAccumulator.current = 0;
                 }
 
                 lastWheelTime.current = currentTime;
 
-                // 累积滚轮值
+                // 累积滚轮滚动量
                 wheelDeltaAccumulator.current += Math.abs(e.deltaY);
 
-                // 如果累积值超过阈值，触发显示下一个片段
+                // 当累积值超过阈值时，触发显示下一个片段
                 if (wheelDeltaAccumulator.current >= WHEEL_THRESHOLD) {
                     showNextSegment();
                     wheelDeltaAccumulator.current = 0; // 重置累积值
+                    // 记录本次成功触发的时间，用于冷却机制判断
+                    lastTriggerTime.current = currentTime;
                 }
             }
         };
@@ -548,6 +532,25 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
             document.head.appendChild(link);
         }
     }, [codeTheme]);
+
+    useEffect(() => {
+        const currentSlideId = slides[currentSlide]?.id;
+        if (!currentSlideId || !slideSegments[currentSlideId]) return;
+
+        const segments = slideSegments[currentSlideId];
+        // 寻找最后一个可见的片段
+        const lastVisibleSegment = [...segments].reverse().find(s => s.isVisible);
+
+        if (lastVisibleSegment) {
+            // 通过 ID 获取该片段的 DOM 元素
+            const segmentElement = document.getElementById(lastVisibleSegment.id);
+            if (segmentElement) {
+                // 将该元素平滑地滚动到视图中
+                // 'nearest' 意味着如果元素已经在视图内，则不会滚动
+                segmentElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+    }, [slideSegments, currentSlide, slides]);
 
     // 添加样式
     useEffect(() => {
@@ -739,6 +742,7 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
                         {(slideSegments[slide.id] || []).map((segment) => (
                             <div
                                 key={segment.id}
+                                id={segment.id}
                                 className={getAnimationClass(segment)}
                                 dangerouslySetInnerHTML={renderSegmentContent(segment)}
                             />
