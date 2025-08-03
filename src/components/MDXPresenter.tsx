@@ -542,13 +542,39 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
         const lastVisibleSegment = [...segments].reverse().find(s => s.isVisible);
 
         if (lastVisibleSegment) {
-            // 通过 ID 获取该片段的 DOM 元素
-            const segmentElement = document.getElementById(lastVisibleSegment.id);
-            if (segmentElement) {
-                // 将该元素平滑地滚动到视图中
-                // 'nearest' 意味着如果元素已经在视图内，则不会滚动
-                segmentElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
+            // 延迟执行滚动，确保DOM更新和动画完成
+            setTimeout(() => {
+                const segmentElement = document.getElementById(lastVisibleSegment.id);
+                const slideContainer = document.querySelector(`[data-slide-id="${currentSlideId}"] .segmented-content`);
+                
+                if (segmentElement && slideContainer) {
+                    const containerRect = slideContainer.getBoundingClientRect();
+                    const elementRect = segmentElement.getBoundingClientRect();
+                    
+                    // 对于列表项，总是滚动到新显示的项目
+                    // 对于其他类型，检查是否在可视区域内
+                    const shouldScroll = lastVisibleSegment.type === 'listItem' || 
+                        !(elementRect.top >= containerRect.top && elementRect.bottom <= containerRect.bottom);
+                    
+                    if (shouldScroll) {
+                        // 对于列表项使用不同的滚动策略
+                        const scrollOptions: ScrollIntoViewOptions = {
+                            behavior: 'smooth',
+                            inline: 'nearest'
+                        };
+                        
+                        if (lastVisibleSegment.type === 'listItem') {
+                            // 列表项滚动到顶部，确保每个项目都能被看到
+                            scrollOptions.block = 'start';
+                        } else {
+                            // 其他内容居中显示
+                            scrollOptions.block = 'center';
+                        }
+                        
+                        segmentElement.scrollIntoView(scrollOptions);
+                    }
+                }
+            }, 100); // 延迟100ms确保动画开始
         }
     }, [slideSegments, currentSlide, slides]);
 
@@ -626,12 +652,11 @@ const MDXPresenter: React.FC<MDXPresenterProps> = ({content, settings, setSchedu
                 background-color: rgba(0, 0, 0, 0.5);
             }
             
-            /* 确保隐藏内容不影响滚动 */
+            /* 隐藏内容保持占位，但不可见 */
             .segment-item:not(.visible) {
-                height: 0;
-                overflow: hidden;
-                margin: 0;
-                padding: 0;
+                opacity: 0;
+                pointer-events: none;
+                transform: translateY(20px);
             }
             
             @keyframes slideInLeft {
